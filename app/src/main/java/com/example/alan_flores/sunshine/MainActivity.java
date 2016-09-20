@@ -1,5 +1,6 @@
 package com.example.alan_flores.sunshine;
 
+import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.renderscript.ScriptGroup;
@@ -9,6 +10,8 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -25,7 +28,7 @@ import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
-
+    private Adapter itemsAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,10 +42,21 @@ public class MainActivity extends AppCompatActivity {
         items.add(new Item("Today - Sunny - 88 / 63"));
         items.add(new Item("Today - Sunny - 88 / 63"));
         items.add(new Item("Today - Sunny - 88 / 63"));
-        Adapter itemsAdapter = new Adapter(this, items);
+        itemsAdapter = new Adapter(this, items);
 
         ListView listView = (ListView) findViewById(R.id.listviewforecast);
         listView.setAdapter(itemsAdapter);
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                String forecast = itemsAdapter.getItem(position).getText();
+                Toast.makeText(MainActivity.this,forecast,Toast.LENGTH_SHORT).show();
+                Intent i = new Intent(MainActivity.this, DetailActivity.class)
+                        .putExtra(Intent.EXTRA_TEXT,forecast);
+                startActivity(i);
+            }
+        });
+
 
 
     }
@@ -69,12 +83,12 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public class FetchWeatherTask extends AsyncTask<String ,Void,Void>{
+    public class FetchWeatherTask extends AsyncTask<String ,Void,ArrayList<Item>>{
 
         private final String LOG_TAG = FetchWeatherTask.class.getSimpleName();
 
         @Override
-        protected Void doInBackground(String... params) {
+        protected ArrayList<Item> doInBackground(String... params) {
 
             if (params.length == 0){
                 Log.w(LOG_TAG,"Error empty params");
@@ -104,7 +118,7 @@ public class MainActivity extends AppCompatActivity {
                         .appendQueryParameter(APPID_PARAM,"0e48143b55aa4f28695abf671260a180").build();
 
                 URL url = new URL(builtUri.toString());
-                Log.v(LOG_TAG,"URL: " + builtUri.toString());
+                //Log.v(LOG_TAG,"URL: " + builtUri.toString());
 
 
 
@@ -131,7 +145,7 @@ public class MainActivity extends AppCompatActivity {
                     return null;
                 }else {
                     forecastJsonStr = buffer.toString();
-                    Log.v(LOG_TAG,"Forecast string: " + forecastJsonStr);
+
                 }
             }catch (IOException e){
                 Log.v("Check",e.getMessage());
@@ -147,7 +161,20 @@ public class MainActivity extends AppCompatActivity {
                         Log.e(LOG_TAG,"Error closing stream",e);
                     }
             }
-            return null;
+            return (new WeatherDataParser().getWeatherFromJSON(forecastJsonStr,7));
+        }
+
+        @Override
+        protected void onPostExecute(ArrayList<Item> items) {
+
+            if(items != null){
+                itemsAdapter.clear();
+                itemsAdapter = new Adapter(MainActivity.this, items);
+                ListView listView = (ListView) findViewById(R.id.listviewforecast);
+                listView.setAdapter(itemsAdapter);
+
+            }
+            super.onPostExecute(items);
         }
     }
 }
