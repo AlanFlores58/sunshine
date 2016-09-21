@@ -39,6 +39,8 @@ public class DetailActivity extends AppCompatActivity {
                 Toast.makeText(this,R.string.action_refresh,Toast.LENGTH_SHORT).show();
                 return true;
             case R.id.setting:
+                Intent i = new Intent(DetailActivity.this, SettingsActivity.class);
+                startActivity(i);
                 Toast.makeText(this,R.string.action_setting,Toast.LENGTH_SHORT).show();
                 return true;
             default:

@@ -1,8 +1,10 @@
 package com.example.alan_flores.sunshine;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.preference.PreferenceManager;
 import android.renderscript.ScriptGroup;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -31,17 +33,23 @@ public class MainActivity extends AppCompatActivity {
     private Adapter itemsAdapter;
 
     @Override
+    protected void onStart() {
+        super.onStart();
+        updateWeather();
+    }
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         final ArrayList<Item> items = new ArrayList<Item>();
-        items.add(new Item("Today - Sunny - 88 / 63"));
+        /*items.add(new Item("Today - Sunny - 88 / 63"));
         items.add(new Item("Tommorow - Foggy - 70 / 46"));
         items.add(new Item("Today - Sunny - 88 / 63"));
         items.add(new Item("Today - Sunny - 88 / 63"));
         items.add(new Item("Today - Sunny - 88 / 63"));
         items.add(new Item("Today - Sunny - 88 / 63"));
-        items.add(new Item("Today - Sunny - 88 / 63"));
+        items.add(new Item("Today - Sunny - 88 / 63"));*/
         itemsAdapter = new Adapter(this, items);
 
         ListView listView = (ListView) findViewById(R.id.listviewforecast);
@@ -72,15 +80,24 @@ public class MainActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.action_refresh:
-                new FetchWeatherTask().execute("44820");
+                SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+                updateWeather();
                 Toast.makeText(this,R.string.action_refresh,Toast.LENGTH_SHORT).show();
                 return true;
             case R.id.setting:
+                Intent i = new Intent(MainActivity.this, SettingsActivity.class);
+                startActivity(i);
                 Toast.makeText(this,R.string.action_setting,Toast.LENGTH_SHORT).show();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
+    }
+
+    private void updateWeather(){
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        String location = prefs.getString(getString(R.string.pref_location_key),getString(R.string.pref_location_default));
+        new FetchWeatherTask().execute(location);
     }
 
     public class FetchWeatherTask extends AsyncTask<String ,Void,ArrayList<Item>>{
