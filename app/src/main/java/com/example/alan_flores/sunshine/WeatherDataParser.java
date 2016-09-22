@@ -1,5 +1,6 @@
 package com.example.alan_flores.sunshine;
 
+import android.content.Context;
 import android.text.format.Time;
 import android.util.Log;
 
@@ -13,7 +14,7 @@ import java.util.ArrayList;
 /**
  * Created by alan_flores on 19/09/16.
  */
-public class WeatherDataParser {
+public class WeatherDataParser{
 
     private final String LOG_TAG = WeatherDataParser.class.getSimpleName();
 
@@ -31,20 +32,28 @@ public class WeatherDataParser {
     }
 
     private String getDateString(long time){
+
+
+
         SimpleDateFormat shortenedDateFormat = new SimpleDateFormat("EEE, MMM dd");
         return shortenedDateFormat.format(time);
     }
 
-    private String formanMaxMin(double max, double min){
+    private String formanMaxMin(double max, double min, String units,Context cont){
+
+        if (units.equals(cont.getString(R.string.pref_units_imperial))){
+            max = (max * 1.8) + 32;
+            min = (min * 1.8) + 32;
+        }
+
         long roundMax = Math.round(max);
         long roundMin = Math.round(min);
-
         String stringMaxMin = roundMax + " / " + roundMin;
 
         return stringMaxMin;
     }
 
-    public ArrayList<Item> getWeatherFromJSON(String weatherJsonStr, int numDays){
+    public ArrayList<Item> getWeatherFromJSON(String weatherJsonStr, int numDays, String units, Context cont){
         ArrayList<Item> items = new ArrayList<Item>();
         try{
             JSONObject forecastJson = new JSONObject(weatherJsonStr);
@@ -70,7 +79,7 @@ public class WeatherDataParser {
                 JSONObject temperatureInfo = dayForecast.getJSONObject("temp");
                 double max = temperatureInfo.getDouble("max");
                 double min = temperatureInfo.getDouble("min");
-                highAndLow = formanMaxMin(max,min);
+                highAndLow = formanMaxMin(max,min,units,cont);
 
                 long dateTime;
                 dateTime = dayTime.setJulianDay(julianStartDay + i);

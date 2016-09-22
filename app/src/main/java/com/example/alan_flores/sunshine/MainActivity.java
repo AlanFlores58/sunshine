@@ -1,5 +1,6 @@
 package com.example.alan_flores.sunshine;
 
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
@@ -31,6 +32,8 @@ import java.util.ArrayList;
 public class MainActivity extends AppCompatActivity {
 
     private Adapter itemsAdapter;
+
+    private final String LOG_TAG = MainActivity.class.getSimpleName();
 
     @Override
     protected void onStart() {
@@ -80,7 +83,6 @@ public class MainActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.action_refresh:
-                SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
                 updateWeather();
                 Toast.makeText(this,R.string.action_refresh,Toast.LENGTH_SHORT).show();
                 return true;
@@ -89,15 +91,40 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(i);
                 Toast.makeText(this,R.string.action_setting,Toast.LENGTH_SHORT).show();
                 return true;
+            case R.id.action_map:
+                openPreferredLocationInMap(this);
+                Toast.makeText(this,R.string.action_map,Toast.LENGTH_SHORT).show();
+                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
     }
 
-    private void updateWeather(){
+    protected void openPreferredLocationInMap(Context context){
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+        String location = prefs.getString(getString(R.string.pref_location_key),getString(R.string.pref_location_default));
+
+        Uri geoLocation = Uri.parse("geo:0,0?").buildUpon()
+                .appendQueryParameter("q",location)
+                .build();
+
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        intent.setData(geoLocation);
+
+        if (intent.resolveActivity(getPackageManager()) != null){
+            startActivity(intent);
+        } else {
+            Log.d(LOG_TAG, "Couldn't call " + location + ", no receiving apps installed!");
+        }
+    }
+
+    protected void updateWeather(){
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         String location = prefs.getString(getString(R.string.pref_location_key),getString(R.string.pref_location_default));
-        new FetchWeatherTask().execute(location);
+        SharedPreferences prefs2 = PreferenceManager.getDefaultSharedPreferences(this);
+        String units = prefs2.getString(getString(R.string.pref_units_key),getString(R.string.pref_units_metric));
+        Toast.makeText(this,location,Toast.LENGTH_SHORT).show();
+        new FetchWeatherTask().execute(location,units);
     }
 
     public class FetchWeatherTask extends AsyncTask<String ,Void,ArrayList<Item>>{
@@ -178,7 +205,7 @@ public class MainActivity extends AppCompatActivity {
                         Log.e(LOG_TAG,"Error closing stream",e);
                     }
             }
-            return (new WeatherDataParser().getWeatherFromJSON(forecastJsonStr,7));
+            return (new WeatherDataParser().getWeatherFromJSON(forecastJsonStr,7,params[1],getBaseContext()));
         }
 
         @Override
